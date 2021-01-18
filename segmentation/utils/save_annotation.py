@@ -257,6 +257,8 @@ def save_panoptic_annotation(label,
     with open('%s/%s.png' % (save_dir, filename), mode='wb') as f:
         pil_image.save(f, 'PNG')
 
+    return pil_image
+
 
 def save_center_image(image,
                       center_points,
