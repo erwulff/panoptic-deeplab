@@ -1,3 +1,9 @@
+## Modified by Eric Wulff
+I forked this repo for some small experiments comparing the use of different backbones in the Panoptic-DeepLab architecture and their effect on model size and performance. My changes and additions are mainly in files under [tools/](/tools).
+
+* [tools/segment_video.py](/tools/segment_video.py) is usefull for running panotpic segmentation on a video file.
+* [tools/quantize_model.py](/tools/quantize_model.py) can be used to compute the model size after quantization using PyTorch's [quantization API](https://pytorch.org/docs/stable/quantization.html#).
+
 # Panoptic-DeepLab (CVPR 2020)
 
 Panoptic-DeepLab is a state-of-the-art bottom-up method for panoptic segmentation, 
