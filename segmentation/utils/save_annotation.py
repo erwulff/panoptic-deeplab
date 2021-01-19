@@ -7,7 +7,7 @@
 
 import numpy as np
 import PIL.Image as img
-from PIL import ImageDraw
+from PIL import ImageDraw, ImageFont
 
 from .flow_vis import flow_compute_color
 
@@ -211,7 +211,9 @@ def save_panoptic_annotation(label,
                              save_dir,
                              filename,
                              label_divisor,
+                             center_pred=None,
                              colormap=None,
+                             labelmap=None,
                              image=None):
     """Saves the given label to image on disk.
     Args:
@@ -225,7 +227,7 @@ def save_panoptic_annotation(label,
     """
     if colormap is None:
         raise ValueError('Expect a valid colormap.')
-    
+
     # Add colormap to label.
     colored_label = np.zeros((label.shape[0], label.shape[1], 3), dtype=np.uint8)
     taken_colors = set([0, 0, 0])
@@ -249,11 +251,36 @@ def save_panoptic_annotation(label,
                     taken_colors.add(color)
                     break
         colored_label[mask] = color
-    
+
     if image is not None:
         colored_label = 0.5 * colored_label + 0.5 * image
 
     pil_image = img.fromarray(colored_label.astype(dtype=np.uint8))
+
+    if labelmap:
+        # get a font
+        fnt = ImageFont.truetype("Pillow/Tests/fonts/FreeMono.ttf", 15)
+        for ii in range(len(center_pred[:, 0])):
+            # Get center coordinates
+            cy = min(center_pred[ii, 0], label.shape[0] - 1)
+            cx = min(center_pred[ii, 1], label.shape[1] - 1)
+
+            center_label = label[cy, cx]
+            sem_label = center_label // label_divisor
+            inst_label = center_label % label_divisor
+
+            text = labelmap[sem_label]
+
+            # create image with black background
+            instance_label_img = img.new('RGBA', (100, 16), "black")
+
+            # put text on image
+            label_draw = ImageDraw.Draw(instance_label_img)
+            label_draw.text((5, 0), "{} #{}".format(text, inst_label), font=fnt)
+
+            # put button on source image in position (cy, cx)
+            pil_image.paste(instance_label_img, (cx, cy))
+
     with open('%s/%s.png' % (save_dir, filename), mode='wb') as f:
         pil_image.save(f, 'PNG')
 

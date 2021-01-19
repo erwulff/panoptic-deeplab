@@ -50,6 +50,9 @@ def parse_args():
                         help='file extension if input is image list',
                         default='.png',
                         type=str)
+    parser.add_argument('--text-labels',
+                        help='include text labels for each predicted centerpoint',
+                        action='store_true')
     parser.add_argument('opts',
                         help="Modify config options using the command-line",
                         default=None,
@@ -119,6 +122,35 @@ class CityscapesMeta(object):
         colormap[17] = [0, 0, 230]  # motorcycle
         colormap[18] = [119, 11, 32]  # bicycle
         return colormap
+
+    @staticmethod
+    def create_label_stringmap():
+        """Creates a label-string map used in CITYSCAPES segmentation benchmark.
+        Returns:
+            A dict mapping from label id to string.
+        """
+        labelmap = {}
+        labelmap[0] = "road"
+        labelmap[1] = "sidewalk"
+        labelmap[2] = "building"
+        labelmap[3] = "wall"
+        labelmap[4] = "fence"
+        labelmap[5] = "pole"
+        labelmap[6] = "traffic light"
+        labelmap[7] = "traffic sign"
+        labelmap[8] = "vegetation"
+        labelmap[9] = "terrain"
+        labelmap[10] = "sky"
+        labelmap[11] = "person"
+        labelmap[12] = "rider"
+        labelmap[13] = "car"
+        labelmap[14] = "truck"
+        labelmap[15] = "bus"
+        labelmap[16] = "train"
+        labelmap[17] = "motorcycle"
+        labelmap[18] = "bicycle"
+        labelmap[255] = "void"
+        return labelmap
 
 
 def main():
@@ -251,6 +283,7 @@ def main():
                     torch.cuda.synchronize(device)
 
                     # Send predictions to cpu
+                    center_pred = center_pred.squeeze(0).cpu().numpy()
                     semantic_pred = semantic_pred.squeeze(0).cpu().numpy()
                     panoptic_pred = panoptic_pred.squeeze(0).cpu().numpy()
 
@@ -259,10 +292,14 @@ def main():
                     panoptic_pred = panoptic_pred[:raw_h, :raw_w]
 
                     # Save predictions
-                    pil_image = save_panoptic_annotation(panoptic_pred, panoptic_out_dir, 'panoptic_pred_%d' % ii,
-                                                         label_divisor=meta_dataset.label_divisor,
-                                                         colormap=meta_dataset.create_label_colormap(),
-                                                         image=raw_image)
+                    pil_image = save_panoptic_annotation(
+                        panoptic_pred, panoptic_out_dir, 'panoptic_pred_%d' % ii,
+                        label_divisor=meta_dataset.label_divisor,
+                        center_pred=center_pred,
+                        colormap=meta_dataset.create_label_colormap(),
+                        labelmap=meta_dataset.create_label_stringmap() if args.text_labels else None,
+                        image=raw_image)
+
                     ii += 1
 
                     # Write image to video file

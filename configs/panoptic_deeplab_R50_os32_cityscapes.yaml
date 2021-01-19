@@ -67,6 +67,7 @@ DEBUG:
   DEBUG: True
   DEBUG_FREQ: 100
 TEST:
+  MODEL_FILE: "model_zoo/panoptic_deeplab_R50_os32_cityscapes.pth"
   EVAL_INSTANCE: True
   EVAL_PANOPTIC: True
 POST_PROCESSING:

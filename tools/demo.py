@@ -33,6 +33,8 @@ import segmentation.data.transforms.transforms as T
 from segmentation.utils import AverageMeter
 from segmentation.data import build_test_loader_from_cfg
 
+from segment_video import CityscapesMeta
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test segmentation network with single process')
@@ -90,41 +92,6 @@ def read_image(file_name, format=None):
     if format == "L":
         image = np.expand_dims(image, -1)
     return image
-
-
-class CityscapesMeta(object):
-    def __init__(self):
-        self.thing_list = [11, 12, 13, 14, 15, 16, 17, 18]
-        self.label_divisor = 1000
-        self.ignore_label = 255
-
-    @staticmethod
-    def create_label_colormap():
-        """Creates a label colormap used in CITYSCAPES segmentation benchmark.
-        Returns:
-            A colormap for visualizing segmentation results.
-        """
-        colormap = np.zeros((256, 3), dtype=np.uint8)
-        colormap[0] = [128, 64, 128]  # road
-        colormap[1] = [244, 35, 232]  # sidewalk
-        colormap[2] = [70, 70, 70]  # building
-        colormap[3] = [102, 102, 156]  # wall
-        colormap[4] = [190, 153, 153]  # fence
-        colormap[5] = [153, 153, 153]  # pole
-        colormap[6] = [250, 170, 30]  # traffic light
-        colormap[7] = [220, 220, 0]  # traffic sign
-        colormap[8] = [107, 142, 35]  # vegetation
-        colormap[9] = [152, 251, 152]  # terrain
-        colormap[10] = [70, 130, 180]  # sky
-        colormap[11] = [220, 20, 60]  # person
-        colormap[12] = [255, 0, 0]  # rider
-        colormap[13] = [0, 0, 142]  # car
-        colormap[14] = [0, 0, 70]  # truck
-        colormap[15] = [0, 60, 100]  # bus
-        colormap[16] = [0, 80, 100]  # train
-        colormap[17] = [0, 0, 230]  # motorcycle
-        colormap[18] = [119, 11, 32]  # bicycle
-        return colormap
 
 
 def main():
@@ -307,6 +274,7 @@ def main():
                              i, len(input_list), net_time=net_time, post_time=post_time))
                 
                 # save predictions
+                center_pred = center_pred.squeeze(0).cpu().numpy()
                 semantic_pred = semantic_pred.squeeze(0).cpu().numpy()
                 panoptic_pred = panoptic_pred.squeeze(0).cpu().numpy()
 
@@ -342,7 +310,9 @@ def main():
                                          image=raw_image if args.merge_image else None)
                 save_panoptic_annotation(panoptic_pred, panoptic_out_dir, 'panoptic_pred_%d' % i,
                                          label_divisor=meta_dataset.label_divisor,
+                                         center_pred=center_pred,
                                          colormap=meta_dataset.create_label_colormap(),
+                                         labelmap=meta_dataset.create_label_stringmap(),
                                          image=raw_image if args.merge_image else None)
     except Exception:
         logger.exception("Exception during demo:")
